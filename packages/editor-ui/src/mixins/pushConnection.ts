@@ -24,6 +24,7 @@ import { useUIStore } from '@/stores/ui';
 import { useWorkflowsStore } from '@/stores/workflows';
 import { useNodeTypesStore } from '@/stores/nodeTypes';
 import { useCredentialsStore } from '@/stores/credentials';
+import { useSettingsStore } from '@/stores/settings';
 
 export const pushConnection = mixins(
 	externalHooks,
@@ -34,7 +35,7 @@ export const pushConnection = mixins(
 ).extend({
 	data() {
 		return {
-			webSocket: null as WebSocket | null,
+			pushSource: null as WebSocket | EventSource | null,
 			reconnectTimeout: null as NodeJS.Timeout | null,
 			retryTimeout: null as NodeJS.Timeout | null,
 			pushMessageQueue: [] as Array<{ event: Event; retriesLeft: number }>,
@@ -43,7 +44,13 @@ export const pushConnection = mixins(
 		};
 	},
 	computed: {
-		...mapStores(useCredentialsStore, useNodeTypesStore, useUIStore, useWorkflowsStore),
+		...mapStores(
+			useCredentialsStore,
+			useNodeTypesStore,
+			useUIStore,
+			useWorkflowsStore,
+			useSettingsStore,
+		),
 		sessionId(): string {
 			return this.rootStore.sessionId;
 		},
@@ -75,20 +82,29 @@ export const pushConnection = mixins(
 		},
 
 		/**
-		 * Connect to server to receive data via a WebSocket
+		 * Connect to server to receive data via a WebSocket or EventSource
 		 */
 		pushConnect(): void {
 			// always close the ws so that we do not end up with multiple ones
 			this.pushDisconnect();
 
-			const connectionUrl = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${
-				window.location.host + this.rootStore.getRestUrl
-			}/push?sessionId=${this.sessionId}`;
+			const { getRestUrl: restUrl } = this.rootStore;
+			const { pushBackend } = this.settingsStore;
+			const url = `/push?sessionId=${this.sessionId}`;
 
-			this.webSocket = new WebSocket(connectionUrl);
-			this.webSocket.addEventListener('message', this.pushMessageReceived, false);
+			if (pushBackend === 'websocket') {
+				const { protocol, host } = window.location;
+				const baseUrl = restUrl.startsWith('http')
+					? restUrl.replace(/^http/, 'ws')
+					: `${protocol === 'https:' ? 'wss' : 'ws'}://${host + restUrl}`;
+				this.pushSource = new WebSocket(`${baseUrl}${url}`);
+			} else {
+				this.pushSource = new EventSource(`${restUrl}${url}`, { withCredentials: true });
+			}
 
-			this.webSocket.addEventListener(
+			this.pushSource.addEventListener('message', this.pushMessageReceived, false);
+
+			this.pushSource.addEventListener(
 				'open',
 				() => {
 					this.connectRetries = 0;
@@ -103,7 +119,7 @@ export const pushConnection = mixins(
 				false,
 			);
 
-			this.webSocket.addEventListener(
+			this.pushSource.addEventListener(
 				'error',
 				() => {
 					this.pushDisconnect();
@@ -124,9 +140,9 @@ export const pushConnection = mixins(
 		 * Close connection to server
 		 */
 		pushDisconnect(): void {
-			if (this.webSocket !== null) {
-				this.webSocket.close();
-				this.webSocket = null;
+			if (this.pushSource !== null) {
+				this.pushSource.close();
+				this.pushSource = null;
 
 				this.rootStore.pushConnectionActive = false;
 			}

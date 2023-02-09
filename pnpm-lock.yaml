@@ -120,7 +120,6 @@ importers:
       '@types/convict': ^4.2.1
       '@types/cookie-parser': ^1.4.2
       '@types/express': ^4.17.6
-      '@types/express-ws': ^3.0.1
       '@types/json-diff': ^0.5.1
       '@types/jsonwebtoken': ^9.0.1
       '@types/localtunnel': ^1.9.0
@@ -149,6 +148,7 @@ importers:
       '@types/syslog-client': ^1.1.2
       '@types/uuid': ^8.3.2
       '@types/validator': ^13.7.0
+      '@types/ws': ^8.5.4
       '@types/yamljs': ^0.2.31
       axios: ^0.21.1
       basic-auth: ^2.0.1
@@ -174,7 +174,6 @@ importers:
       express-async-errors: ^3.1.1
       express-openapi-validator: ^4.13.6
       express-prom-bundle: ^6.6.0
-      express-ws: ^5.0.2
       fast-glob: ^3.2.5
       flatted: ^3.2.4
       google-timezones-json: ^1.0.2
@@ -229,6 +228,7 @@ importers:
       shelljs: ^0.8.5
       source-map-support: ^0.5.21
       sqlite3: ^5.1.4
+      sse-channel: ^4.0.0
       swagger-ui-express: ^4.3.0
       syslog-client: ^1.1.1
       tsc-alias: ^1.8.2
@@ -237,7 +237,7 @@ importers:
       uuid: ^8.3.2
       validator: 13.7.0
       winston: ^3.3.3
-      ws: ^8.11.0
+      ws: ^8.12.0
       yamljs: ^0.3.0
     dependencies:
       '@n8n_io/license-sdk': 1.8.0
@@ -247,7 +247,6 @@ importers:
       '@rudderstack/rudder-sdk-node': 1.0.6
       '@sentry/integrations': 7.28.1
       '@sentry/node': 7.28.1
-      '@types/express-ws': 3.0.1
       axios: 0.21.4
       basic-auth: 2.0.1
       bcryptjs: 2.4.3
@@ -270,7 +269,6 @@ importers:
       express-async-errors: 3.1.1_express@4.18.2
       express-openapi-validator: 4.13.8
       express-prom-bundle: 6.6.0_prom-client@13.2.0
-      express-ws: 5.0.2_express@4.18.2
       fast-glob: 3.2.12
       flatted: 3.2.7
       google-timezones-json: 1.0.2
@@ -321,6 +319,7 @@ importers:
       shelljs: 0.8.5
       source-map-support: 0.5.21
       sqlite3: 5.1.4
+      sse-channel: 4.0.0
       swagger-ui-express: 4.5.0_express@4.18.2
       syslog-client: 1.1.1
       typeorm: 0.3.12_pgelcv6ef3switkrteavpif3pq
@@ -368,6 +367,7 @@ importers:
       '@types/syslog-client': 1.1.2
       '@types/uuid': 8.3.4
       '@types/validator': 13.7.7
+      '@types/ws': 8.5.4
       '@types/yamljs': 0.2.31
       chokidar: 3.5.2
       concurrently: 5.3.0
@@ -5816,14 +5816,6 @@ packages:
       '@types/qs': 6.9.7
       '@types/range-parser': 1.2.4
 
-  /@types/express-ws/3.0.1:
-    resolution: {integrity: sha512-VguRXzcpPBF0IggIGpUoM65cZJDfMQxoc6dKoCz1yLzcwcXW7ft60yhq3ygKhyEhEIQFtLrWjyz4AJ1qjmzCFw==}
-    dependencies:
-      '@types/express': 4.17.14
-      '@types/express-serve-static-core': 4.17.31
-      '@types/ws': 8.5.4
-    dev: false
-
   /@types/express/4.17.14:
     resolution: {integrity: sha512-TEbt+vaPFQ+xpxFLFssxUDXj5cWCxZJjIcB7Yg0k0GMHGtgtQgpvx/MUQUeAkNbA9AAGrwkAsoeItdTgS7FMyg==}
     dependencies:
@@ -6504,7 +6496,7 @@ packages:
     resolution: {integrity: sha512-zdQDHKUgcX/zBc4GrwsE/7dVdAD8JR4EuiAXiiUhhfyIJXXb2+PrGshFyeXWQPMmmZ2XxgaqclgpIC7eTXc1mg==}
     dependencies:
       '@types/node': 16.18.12
-    dev: false
+    dev: true
 
   /@types/xml2js/0.4.11:
     resolution: {integrity: sha512-JdigeAKmCyoJUiQljjr7tQG3if9NkqGUgwEUqBvV0N7LM4HyQk7UXCnusRa1lnvXAEYJ8mw8GtZWioagNztOwA==}
@@ -11486,19 +11478,6 @@ packages:
       on-finished: 2.4.1
       prom-client: 13.2.0
       url-value-parser: 2.2.0
-    dev: false
-
-  /express-ws/5.0.2_express@4.18.2:
-    resolution: {integrity: sha512-0uvmuk61O9HXgLhGl3QhNSEtRsQevtmbL94/eILaliEADZBHZOQUAiHFrGPrgsjikohyrmSG5g+sCfASTt0lkQ==}
-    engines: {node: '>=4.5.0'}
-    peerDependencies:
-      express: ^4.0.0 || ^5.0.0-alpha.1
-    dependencies:
-      express: 4.18.2
-      ws: 7.5.9
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
     dev: false
 
   /express/4.18.2:
@@ -19694,6 +19673,10 @@ packages:
   /sqlstring/2.3.3:
     resolution: {integrity: sha512-qC9iz2FlN7DQl3+wjwn3802RTyjCx7sDvfQEXchwa6CWOx07/WVfh91gBmQ9fahw8snwGEWU3xGzOt4tFyHLxg==}
     engines: {node: '>= 0.6'}
+    dev: false
+
+  /sse-channel/4.0.0:
+    resolution: {integrity: sha512-I539Tc0gyDTQ2QCSg4v78Flxo/UbqR9x7JoyPcqaPtwo+qzeOw/fF+aPSbk0xTvBQAAAZk7Dlkc8K1bum5GUnw==}
     dev: false
 
   /ssf/0.11.2:
