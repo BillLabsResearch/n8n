@@ -28,12 +28,12 @@ import { LoadNodesAndCredentials } from '@/LoadNodesAndCredentials';
 import { NodeTypes } from '@/NodeTypes';
 import { InternalHooksManager } from '@/InternalHooksManager';
 import * as Server from '@/Server';
-import { DatabaseType } from '@/Interfaces';
 import * as TestWebhooks from '@/TestWebhooks';
 import { WaitTracker } from '@/WaitTracker';
 
 import { getLogger } from '@/Logger';
 import { getAllInstalledPackages } from '@/CommunityNodes/packageModel';
+import { handleLdapInit } from '@/Ldap/helpers';
 import { initErrorHandling } from '@/ErrorReporting';
 import * as CrashJournal from '@/CrashJournal';
 import { createPostHogLoadingScript } from '@/telemetry/scripts';
@@ -203,6 +203,7 @@ export class Start extends Command {
 				const streams = [
 					createReadStream(filePath, 'utf-8'),
 					replaceStream('/{{BASE_PATH}}/', n8nPath, { ignoreCase: false }),
+					replaceStream('/%7B%7BBASE_PATH%7D%7D/', n8nPath, { ignoreCase: false }),
 					replaceStream('/static/', n8nPath + 'static/', { ignoreCase: false }),
 				];
 				if (filePath.endsWith('index.html')) {
@@ -238,6 +239,14 @@ export class Start extends Command {
 		const { flags } = this.parse(Start);
 
 		try {
+			// Load all node and credential types
+			const loadNodesAndCredentials = LoadNodesAndCredentials();
+			await loadNodesAndCredentials.init();
+
+			// Add the found types to an instance other parts of the application can use
+			const nodeTypes = NodeTypes(loadNodesAndCredentials);
+			const credentialTypes = CredentialTypes(loadNodesAndCredentials);
+
 			// Start directly with the init of the database to improve startup time
 			await Db.init().catch(async (error: Error) =>
 				exitWithCrash('There was an error initializing DB', error),
@@ -264,20 +273,12 @@ export class Start extends Command {
 				await Start.generateStaticAssets();
 			}
 
-			// Load all node and credential types
-			const loadNodesAndCredentials = LoadNodesAndCredentials();
-			await loadNodesAndCredentials.init();
-
 			// Load all external hooks
 			const externalHooks = ExternalHooks();
 			await externalHooks.init();
 
-			// Add the found types to an instance other parts of the application can use
-			const nodeTypes = NodeTypes(loadNodesAndCredentials);
-			const credentialTypes = CredentialTypes(loadNodesAndCredentials);
-
 			// Load the credentials overwrites if any exist
-			await CredentialsOverwrites(credentialTypes).init();
+			CredentialsOverwrites(credentialTypes);
 
 			await loadNodesAndCredentials.generateTypesForFrontend();
 
@@ -339,8 +340,7 @@ export class Start extends Command {
 				);
 			}
 
-			const dbType = (await GenericHelpers.getConfigValue('database.type')) as DatabaseType;
-
+			const dbType = config.getEnv('database.type');
 			if (dbType === 'sqlite') {
 				const shouldRunVacuum = config.getEnv('database.sqlite.executeVacuumOnStartup');
 				if (shouldRunVacuum) {
@@ -406,6 +406,8 @@ export class Start extends Command {
 			await activeWorkflowRunner.init();
 
 			WaitTracker();
+
+			await handleLdapInit();
 
 			const editorUrl = GenericHelpers.getBaseUrl();
 			this.log(`\nEditor is now accessible via:\n${editorUrl}`);
