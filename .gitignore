@@ -16,6 +16,7 @@ nodelinter.config.json
 **/package-lock.json
 packages/**/.turbo
 *.tsbuildinfo
+cypress/.turbo
 cypress/videos/*
 cypress/screenshots/*
 *.swp
